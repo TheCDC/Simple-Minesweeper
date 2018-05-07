@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-
+"""Minesweeper game implmentation."""
 import enum
 import random
 from itertools import product
@@ -52,9 +52,12 @@ class Game:
         self.mines = mines
         self.board = [[Tile(TileState.empty, False) for _x in range(x)]
                       for _y in range(y)]
+        # Populate the board with mines by making a list of all coordinates,
+        # shuffling it, then getting the first N items of the shuffles list
         all_coords = list(product(range(x), range(y)))
         random.shuffle(all_coords)
         mine_coords = all_coords[:mines]
+        # put mines in all renadomaly selected tiles
         for c in mine_coords:
             self.board[c[1]][c[0]].make_mine()
 
@@ -62,7 +65,7 @@ class Game:
         self._check_coords(x, y)
         # remember visited tiles
         visited_coords = set()
-        # stack of tiles to visit
+        # stack of tiles to visit in flood fill
         coords_stack = [(x, y)]
         t = self.board[y][x]
 
@@ -112,18 +115,15 @@ class Game:
         self._check_coords(x, y)
         n = 0
         for o in NEIGHBOR_OFFSETS:
+            newx = x + o[0]
+            newy = y + o[1]
             try:
-                newx = x + o[0]
-                newy = y + o[1]
-                try:
-                    self._check_coords(newx, newy)
-                    if self.board[newy][newx].state == TileState.mine:
-                        n += 1
-                except ValueError:
-                    pass
-
-            except IndexError:
+                self._check_coords(newx, newy)
+                if self.board[newy][newx].state == TileState.mine:
+                    n += 1
+            except ValueError:
                 pass
+
         return n
 
     def get_string(self, cheat=False):
@@ -131,7 +131,7 @@ class Game:
         rows = []
         # x coords bar
         rows.append(','.join(list(map(str, range(len(self.board[0]))))))
-        for y, row in enumerate(self.board):
+        for y, _ in enumerate(self.board):
             row_strings = []
             for x, t in enumerate(self.board[y]):
                 t = self.board[y][x]
