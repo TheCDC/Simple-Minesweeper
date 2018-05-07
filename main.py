@@ -6,6 +6,7 @@ from itertools import product
 
 
 class TileState(enum.Enum):
+    """Represent possible states of tiles."""
     empty = '0'
     mine = 'M'
 
@@ -25,6 +26,8 @@ class Tile:
         self.state = TileState.mine
 
     def get_string(self, cheat=False):
+        """Return a visual representation of this tile wrt 
+        its game state."""
         if self.clicked or cheat:
             return str(self.state.value)
         return '#'
@@ -44,7 +47,9 @@ class Game:
         if mines > x * y:
             raise ValueError(
                 'Number of mines can not be greater than size of board!')
-
+        self.x = x
+        self.y = y
+        self.mines = mines
         self.board = [[Tile(TileState.empty, False) for _x in range(x)]
                       for _y in range(y)]
         all_coords = list(product(range(x), range(y)))
@@ -54,42 +59,75 @@ class Game:
             self.board[c[1]][c[0]].make_mine()
 
     def move(self, x: int, y: int, autofill: bool = True):
-        seen_coords = set()
-        coords_queue = [(x, y)]
-        val = 0
-        ret = None
+        self._check_coords(x, y)
+        # remember visited tiles
+        visited_coords = set()
+        # stack of tiles to visit
+        coords_stack = [(x, y)]
         t = self.board[y][x]
-        val = t.click()
-        if ret is None:
-            ret = val
-        while len(coords_queue) > 0:
-            c = coords_queue.pop()
-            # print(c)
-            # import pudb
-            # pudb.set_trace()
-            try:
-                if autofill and (c not in seen_coords):
-                    for o in NEIGHBOR_OFFSETS:
-                        c_next = (c[1] + o[1], c[0] + o[0])
-                        if self.get_num_mines(*c_next) == 0:
-                            self.board[c_next[1]][c_next[0]].click()
-                            coords_queue.append(c_next)
-            except IndexError:
-                pass
-            seen_coords.add(c)
+
+        ret = t.click()
+        # flood fill tiles with 0 neighboring mines
+        # via recursive depth-first search
+        while len(coords_stack) > 0:
+            c = coords_stack.pop()
+            # ignore any tiles already visited
+            if c in visited_coords:
+                continue
+            visited_coords.add(c)
+            if autofill:
+                my_mines = self.get_num_mines(*c)
+                # don't visit this tile's neighbors if there is a mine
+                if my_mines != 0:
+                    continue
+                # visit neighbors and add to stack
+                for o in NEIGHBOR_OFFSETS:
+                    c_next = (c[0] + o[0], c[1] + o[1])
+                    try:
+                        # try to click the neighbor
+                        self.click(*c_next)
+                        coords_stack.append(c_next)
+                    except ValueError:
+                        # error occurs when coordinates are off the board.
+                        # safe to ignore
+                        pass
         return ret
 
+    def _check_coords(self, x, y):
+        """Throw an error of the given coordinate sare invalid."""
+        if any(i < 0 for i in [x, y]):
+            raise ValueError('Negative coordinates are invalid!')
+        if y >= len(self.board):
+            raise ValueError('y larger than board!')
+        if x >= len(self.board[0]):
+            raise ValueError('x larger than board!')
+
+    def click(self, x, y):
+        """Activate the tile at x,y."""
+        self._check_coords(x, y)
+        self.board[y][x].click()
+
     def get_num_mines(self, x: int, y: int):
+        """Return the number of mines neighboring a tile."""
+        self._check_coords(x, y)
         n = 0
         for o in NEIGHBOR_OFFSETS:
             try:
-                if self.board[y + o[1]][x + o[0]].state == TileState.mine:
-                    n += 1
+                newx = x + o[0]
+                newy = y + o[1]
+                try:
+                    self._check_coords(newx, newy)
+                    if self.board[newy][newx].state == TileState.mine:
+                        n += 1
+                except ValueError:
+                    pass
+
             except IndexError:
                 pass
         return n
 
     def get_string(self, cheat=False):
+        """Return an ASCII representation of the baord for console play."""
         rows = []
         # x coords bar
         rows.append(','.join(list(map(str, range(len(self.board[0]))))))
@@ -109,14 +147,24 @@ class Game:
     def __str__(self):
         return self.get_string(cheat=False)
 
+    def check_win(self):
+        """Return whether the player has won the game."""
+        count = 0
+        for row in self.board:
+            for t in row:
+                if t.clicked and t.state != TileState.mine:
+                    count += 1
+        return count == self.x * self.y - self.mines
+
 
 def main():
-    g = Game(10, 10, 3)
+    g = Game(10, 10, 5)
     # game input loop
     while True:
         print(g)
+        # get user input and handle it if it's invalid
         try:
-            x, y = map(int, input('x y >>>').split(' ')[:2])
+            x, y = map(int, input('x y >>>').split()[:2])
         except (KeyboardInterrupt, EOFError):
             break
         except ValueError:
@@ -125,6 +173,9 @@ def main():
         result = g.move(x, y)
         if result == TileState.mine:
             print('You lose!')
+            break
+        elif g.check_win():
+            print('You win!')
             break
 
     print(g.get_string(cheat=True))
