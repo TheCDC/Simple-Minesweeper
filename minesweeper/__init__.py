@@ -3,6 +3,7 @@
 import enum
 import random
 from itertools import product
+import sys
 
 
 class TileState(enum.Enum):
@@ -62,11 +63,12 @@ class Game:
             self.board[c[1]][c[0]].make_mine()
 
     def flood_click(self, x: int, y: int) -> int:
+        self.get_tile(x, y).click()
         # remember visited tiles
         visited_coords = set()
         # stack of tiles to visit in flood fill
         coords_stack = [(x, y)]
-        num_clicked = 0
+        num_clicked = 1
         # flood fill tiles with 0 neighboring mines
         # via recursive depth-first search
         while len(coords_stack) > 0:
@@ -92,6 +94,10 @@ class Game:
                     # safe to ignore
                     pass
         return num_clicked
+
+    def get_tile(self, x: int, y: int):
+        self._check_coords(x, y)
+        return self.board[y][x]
 
     def move(self, x: int, y: int, autofill: bool = True) -> TileState:
         self._check_coords(x, y)
@@ -168,7 +174,12 @@ class Game:
 
 
 def main():
-    g = Game(10, 10, 5)
+    try:
+        args = map(int, sys.argv[1:4])
+        g = Game(*args)
+    except IndexError:
+        print('Requires width, height, and number of mines as arguments!')
+        quit()
     # game input loop
     while True:
         print(g)
