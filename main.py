@@ -132,16 +132,21 @@ class Game:
         # x coords bar
         rows.append(','.join(list(map(str, range(len(self.board[0]))))))
         for y, _ in enumerate(self.board):
-            row_strings = []
+            columns = []
             for x, t in enumerate(self.board[y]):
                 t = self.board[y][x]
                 if t.clicked and t.state != TileState.mine:
-                    row_strings.append(str(self.get_num_mines(x, y)))
+                    n = self.get_num_mines(x, y)
+                    if n == 0:
+                        columns.append(' ')
+                    else:
+                        columns.append(str(n))
+
                 else:
-                    row_strings.append(t.get_string(cheat=cheat))
+                    columns.append(t.get_string(cheat=cheat))
             # y coords bar
-            row_strings.append(str(y))
-            rows.append('|'.join(row_strings))
+            columns.append(str(y))
+            rows.append('|'.join(columns))
         return '\n'.join(rows)
 
     def __str__(self):
