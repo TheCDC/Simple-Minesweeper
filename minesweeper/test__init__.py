@@ -16,3 +16,22 @@ class MineSweeperTests(unittest.TestCase):
         self.assertEqual(g.get_num_mines(1, 0), 1)
         self.assertEqual(g.get_num_mines(0, 1), 1)
         self.assertEqual(g.get_num_mines(1, 1), 0)
+        g.board = [
+            [mine_tile, empty_tile],
+            [empty_tile, mine_tile],
+        ]
+        self.assertEqual(g.get_num_mines(0, 0), 1)
+        self.assertEqual(g.get_num_mines(1, 0), 2)
+        self.assertEqual(g.get_num_mines(0, 1), 2)
+        self.assertEqual(g.get_num_mines(1, 1), 1)
+        g = minesweeper.Game(3, 3, 1)
+        g.board = [
+            [empty_tile, empty_tile, empty_tile],
+            [empty_tile, mine_tile, empty_tile],
+            [empty_tile, empty_tile, empty_tile],
+        ]
+        self.assertEqual(g.get_num_mines(0, 0), 1)
+        self.assertEqual(g.get_num_mines(1, 1), 0)
+        self.assertEqual(g.get_num_mines(2, 2), 1)
+        self.assertEqual(g.get_num_mines(0, 2), 1)
+        self.assertEqual(g.get_num_mines(1, 2), 1)
