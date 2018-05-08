@@ -1,4 +1,4 @@
-Minesweeper implementation as practice fro Triplebyte interview.
+Minesweeper implementation as practice for Triplebyte interview.
 
 # The game
 
