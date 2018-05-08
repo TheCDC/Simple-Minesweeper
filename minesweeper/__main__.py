@@ -1,0 +1,2 @@
+import minesweeper
+minesweeper.main()
