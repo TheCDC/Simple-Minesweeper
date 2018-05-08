@@ -18,7 +18,7 @@ class Tile:
         self.state = state
         self.clicked = clicked
 
-    def click(self):
+    def click(self) -> TileState:
         self.clicked = True
         return self.state
 
@@ -26,7 +26,7 @@ class Tile:
         self.state = TileState.mine
 
     def get_string(self, cheat=False):
-        """Return a visual representation of this tile wrt 
+        """Return a visual representation of this tile wrt
         its game state."""
         if self.clicked or cheat:
             return str(self.state.value)
@@ -61,15 +61,12 @@ class Game:
         for c in mine_coords:
             self.board[c[1]][c[0]].make_mine()
 
-    def move(self, x: int, y: int, autofill: bool = True):
-        self._check_coords(x, y)
+    def flood_click(self, x: int, y: int) -> int:
         # remember visited tiles
         visited_coords = set()
         # stack of tiles to visit in flood fill
         coords_stack = [(x, y)]
-        t = self.board[y][x]
-
-        ret = t.click()
+        num_clicked = 0
         # flood fill tiles with 0 neighboring mines
         # via recursive depth-first search
         while len(coords_stack) > 0:
@@ -78,22 +75,30 @@ class Game:
             if c in visited_coords:
                 continue
             visited_coords.add(c)
-            if autofill:
-                my_mines = self.get_num_mines(*c)
-                # don't visit this tile's neighbors if there is a mine
-                if my_mines != 0:
-                    continue
-                # visit neighbors and add to stack
-                for o in NEIGHBOR_OFFSETS:
-                    c_next = (c[0] + o[0], c[1] + o[1])
-                    try:
-                        # try to click the neighbor
-                        self.click(*c_next)
-                        coords_stack.append(c_next)
-                    except ValueError:
-                        # error occurs when coordinates are off the board.
-                        # safe to ignore
-                        pass
+            my_mines = self.get_num_mines(*c)
+            # don't visit this tile's neighbors if there is a mine
+            if my_mines != 0:
+                continue
+            # visit neighbors and add to stack
+            for o in NEIGHBOR_OFFSETS:
+                c_next = (c[0] + o[0], c[1] + o[1])
+                try:
+                    # try to click the neighbor
+                    self.click(*c_next)
+                    coords_stack.append(c_next)
+                    num_clicked += 1
+                except ValueError:
+                    # error occurs when coordinates are off the board.
+                    # safe to ignore
+                    pass
+        return num_clicked
+
+    def move(self, x: int, y: int, autofill: bool = True) -> TileState:
+        self._check_coords(x, y)
+        t = self.board[y][x]
+        if autofill:
+            self.flood_click(x, y)
+        ret = t.click()
         return ret
 
     def _check_coords(self, x, y):
