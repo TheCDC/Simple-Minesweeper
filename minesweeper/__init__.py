@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Minesweeper game implmentation."""
+"""Minesweeper game implementation."""
 import enum
 import random
 from itertools import product
