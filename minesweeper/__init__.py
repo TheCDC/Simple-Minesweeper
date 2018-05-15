@@ -108,7 +108,7 @@ class Game:
         return ret
 
     def _check_coords(self, x, y):
-        """Throw an error of the given coordinate sare invalid."""
+        """Throw an error if the given coordinates are invalid."""
         if any(i < 0 for i in [x, y]):
             raise ValueError('Negative coordinates are invalid!')
         if y >= len(self.board):
